@@ -1,0 +1,10 @@
+
+*#*#
+*.txt
+*~
+
+.idea/
+.vscode/
+
+input.log
+
