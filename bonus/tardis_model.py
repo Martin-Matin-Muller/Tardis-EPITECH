@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Building a prediction model is the third step of the Tardis Project. The goal is to use the values in our cleaned dataset to predict future delays.
-
-# In[ ]:
-
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,15 +10,12 @@ from sklearn.preprocessing import OneHotEncoder
 #from sklearn.preprocessing import StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import make_scorer, mean_absolute_error, root_mean_squared_error
 from sklearn.dummy import DummyRegressor
 from datetime import datetime
 
-
-categorical_features = ["Month", "Departure station", "Arrival station"]
-
-
+categorical_features = ["Month","Service", "Departure station", "Arrival station"]
 
 def build_pipeline(categorical_features):
     '''numeric_transformer = Pipeline(steps=[
@@ -46,7 +38,6 @@ def build_pipeline(categorical_features):
     ])
 
     return pipe
-
 
 def parse_params(param_str):
     if not param_str or param_str == "{}":
@@ -74,7 +65,7 @@ def parse_params(param_str):
     return param_dict
 
 
-def predict_delay(date_str, departure, destination, target, df, results_df):
+def predict_delay(date_str, departure, destination, service, target, df, results_df):
     df = df.copy()
     if df['Month'].dtype == object:
         month = datetime.strptime(date_str, "%Y-%m-%d").strftime("%B")
@@ -91,8 +82,8 @@ def predict_delay(date_str, departure, destination, target, df, results_df):
     model_map = {
         'RandomForestRegressor': RandomForestRegressor,
         'GradientBoostingRegressor': GradientBoostingRegressor,
+        'DecisionTreeRegressor': DecisionTreeRegressor,
         'HistGradientBoostingRegressor': HistGradientBoostingRegressor,
-        'LinearRegression': LinearRegression,
     }
     model_cls = model_map[model_name]
 
@@ -103,9 +94,9 @@ def predict_delay(date_str, departure, destination, target, df, results_df):
     input_data = pd.DataFrame([{
         'Month': month,
         'Departure station': departure,
-        'Arrival station': destination
+        'Arrival station': destination,
+        'Service': service
     }])
 
-    # Predict
     prediction = pipe.predict(input_data)[0]
     return prediction
