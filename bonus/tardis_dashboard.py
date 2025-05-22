@@ -11,6 +11,31 @@ import streamlit.components.v1 as components
 import folium
 from streamlit_folium import st_folium
 import requests
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
+#from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import make_scorer, mean_absolute_error, root_mean_squared_error
+from sklearn.dummy import DummyRegressor
+from tardis_model import predict_delay
+
+
+
+
+def get_coordinates(nom_gare):
+    GEOAPIFY_API_KEY = "224eacac2c7746d1a06ef91cc64ec5f4"
+    url = f"https://api.geoapify.com/v1/geocode/search?text=Gare {nom_gare}, France&apiKey={GEOAPIFY_API_KEY}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if data["features"]:
+            coords = data["features"][0]["geometry"]["coordinates"]
+            return coords[1], coords[0]
+    return None
+
 
 
 
@@ -26,105 +51,261 @@ def global_pred_sidebar():
 
 def global_pred():
     global_pred_sidebar()
+    st.write("martin")
     return
 
 def precise_pred_sidebar():
-        st.sidebar.markdown("### Ce que vous retrouverez dans cette page :")
-        st.sidebar.markdown("##### On doit écrire des petit pied")
-        gares = [
-            "PARIS MONTPARNASSE", "QUIMPER", "ST MALO", "ST PIERRE DES CORPS", "STRASBOURG", "PARIS NORD", "LYON PART DIEU", "TOURCOING",
-            "NANTES", "PARIS VAUGIRARD", "BORDEAUX ST JEAN", "PARIS LYON", "MARNE LA VALLEE", "CHAMBERY CHALLES LES EAUX", "MARSEILLE ST CHARLES", "FRANCFORT", "ZURICH", "ANGOULEME", "POITIERS", "TOURS", "METZ", "REIMS", "PARIS EST", "DOUAI", "MULHOUSE VILLE", "VALENCE ALIXAN TGV", "STUTTGART", "BARCELONA",
-            "ANGERS SAINT LAUD", "LAVAL", "NANCY", "LILLE", "GRENOBLE", "LE CREUSOT MONTCEAU MONTCHANIN", "MACON LOCHE",
-            "NIMES", "ITALIE", "RENNES", "BREST", "LA ROCHELLE VILLE", "LE MANS", "VANNES", "DUNKERQUE", "AVIGNON TGV", "BELLEGARDE (AIN)", "BESANCON FRANCHE COMTE TGV", "DIJON VILLE", "MONTPELLIER", "MADRID", "ARRAS", "AIX EN PROVENCE TGV",
-            "ANNECY", "NICE VILLE", "SAINT ETIENNE CHATEAUCREUX", "TOULON", "GENEVE", "PERPIGNAN", "LAUSANNE", "TOULOUSE MATABIAU"
-        ]
-        st.sidebar.markdown("### Où ?")
-        gare_depart = st.sidebar.selectbox("Gare de départ", gares)
-        gare_arrivee = st.sidebar.selectbox("Gare d'arrivée", gares)
+    #bulle info
+    st.sidebar.markdown("### Ce que vous retrouverez dans cette page :")
+    st.sidebar.markdown("##### On doit écrire des petit pied")
+    #init les gares
+    gares = [
+        "PARIS MONTPARNASSE", "QUIMPER", "ST MALO", "ST PIERRE DES CORPS", "STRASBOURG", "PARIS NORD", "LYON PART DIEU", "TOURCOING",
+        "NANTES", "PARIS VAUGIRARD", "BORDEAUX ST JEAN", "PARIS LYON", "MARNE LA VALLEE", "CHAMBERY CHALLES LES EAUX", "MARSEILLE ST CHARLES", "FRANCFORT", "ZURICH", "ANGOULEME", "POITIERS", "TOURS", "METZ", "REIMS", "PARIS EST", "DOUAI", "MULHOUSE VILLE", "VALENCE ALIXAN TGV", "STUTTGART", "BARCELONA",
+        "ANGERS SAINT LAUD", "LAVAL", "NANCY", "LILLE", "GRENOBLE", "LE CREUSOT MONTCEAU MONTCHANIN", "MACON LOCHE",
+        "NIMES", "ITALIE", "RENNES", "BREST", "LA ROCHELLE VILLE", "LE MANS", "VANNES", "DUNKERQUE", "AVIGNON TGV", "BELLEGARDE (AIN)", "BESANCON FRANCHE COMTE TGV", "DIJON VILLE", "MONTPELLIER", "MADRID", "ARRAS", "AIX EN PROVENCE TGV",
+        "ANNECY", "NICE VILLE", "SAINT ETIENNE CHATEAUCREUX", "TOULON", "GENEVE", "PERPIGNAN", "LAUSANNE", "TOULOUSE MATABIAU"
+    ]
+    gares.sort()
+    #choix des gares
+    st.sidebar.markdown("### Où ?")
+    gare_depart = st.sidebar.selectbox("Gare de départ", gares)
+    gare_arrivee = st.sidebar.selectbox("Gare d'arrivée", gares)
+    #choix de la date
+    st.sidebar.markdown("### Quand ?")
+    date_debut = st.sidebar.date_input("Date de début", min_value=datetime.today())
+    #vérifie si ya valid_journey dans la sesion actuel
+    if "valid_journey" not in st.session_state:
+        st.session_state.valid_journey = False
+    #si il appuie sur valider
+    bloc_height = 250
+    if st.sidebar.button("Valider"):
+        #les gares c pas les même
         if gare_depart == gare_arrivee:
-            st.sidebar.error("La gare de départ et la gare d'arrivée ne peuvent pas être identiques.")
-    
-        st.sidebar.markdown("### Quand ?")
-        date_debut = st.sidebar.date_input("Date de début", min_value=datetime.today())
-    
-    
-    
-    
+            st.sidebar.error("La gare de départ et la gare d'arrivée ne peuvent pas être les mêmes.")
+            st.session_state.valid_journey = False
+        #on set tout pour plus tard
+        else:
+            st.session_state.valid_journey = True
+            st.session_state.gare_depart = gare_depart
+            st.session_state.gare_arrivee = gare_arrivee
+            st.session_state.date_debut = date_debut
+    #si le trajet est bon
+    if st.session_state.valid_journey:
+        #aff titre
         html_title = f"""
         <div style='font-size:40px; font-weight:bold; overflow: hidden; text-overflow: ellipsis;'>
             Information sur votre trajet :
         </div>
         """
         components.html(html_title, height=55)
-    
-    
-    
-    
-    
-    
-    
-        ligne_trajet = f"{gare_depart} → {gare_arrivee}"
-        if len(ligne_trajet) > 35:
-            bloc_height = 80
-        else:
-            bloc_height = 40
+        #aff les box avec gare et date
+        date_str = f"Vous partez le : {st.session_state.date_debut.strftime('%d/%m/%Y')}"
         html_code = f"""
-        <div style='font-size:24px; font-weight:bold; overflow: hidden; text-overflow: ellipsis;'>
-            {ligne_trajet}
+        <div style='font-size:24px; font-weight:bold; padding: 10px; margin-bottom: 10px;'>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 10px; gap: 20px;'>
+                <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; width: 48%; text-align: center;'>
+                    <strong>Départ :</strong><br>{st.session_state.gare_depart}
+                </div>
+                <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; width: 48%; text-align: center;'>
+                    <strong>Arrivée :</strong><br>{st.session_state.gare_arrivee}
+                </div>
+            </div>
+            <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; text-align: center;'>
+                {date_str}
+            </div>
         </div>
         """
+        if len(st.session_state.gare_arrivee) > 20 or len(st.session_state.gare_depart) > 20:
+            bloc_height = 300
         components.html(html_code, height=bloc_height)
-        if gare_depart == gare_arrivee:
-            st.error("La gare de départ et la gare d'arrivée ne peuvent pas être identiques.")
-    
-    
-    
-    
-    
-    
-        date_str = f"Vous partez le : {date_debut.strftime('%d/%m/%Y')}"
-        html_date = f"""
-        <div style='font-size:24px; font-weight:bold; white-space: nowrap;'>
-            {date_str}
+        #fais la map
+        coord_depart = get_coordinates(st.session_state.gare_depart)
+        coord_arrivee = get_coordinates(st.session_state.gare_arrivee)
+        if coord_depart and coord_arrivee:
+            mid_lat = (coord_depart[0] + coord_arrivee[0]) / 2
+            mid_lon = (coord_depart[1] + coord_arrivee[1]) / 2
+
+            m = folium.Map(location=[mid_lat, mid_lon], zoom_start=6)
+            folium.Marker(coord_depart, tooltip="Départ", popup=st.session_state.gare_depart, icon=folium.Icon(color='green')).add_to(m)
+            folium.Marker(coord_arrivee, tooltip="Arrivée", popup=st.session_state.gare_arrivee, icon=folium.Icon(color='red')).add_to(m)
+            folium.PolyLine([coord_depart, coord_arrivee], color="blue", weight=4).add_to(m)
+            st_folium(m, width=700, height=500)
+        else:
+            st.error("Impossible de géolocaliser l'une des deux gares.")
+        return st.session_state
+
+
+
+
+
+# Average delay of late trains at departure", df, results_df):.2f} minutes")
+# Average delay of all trains at departure", df, results_df):.2f} minutes")
+# Average delay of late trains at arrival", df, results_df):.2f} minutes")
+# Average delay of all trains at arrival", df, results_df):.2f} minutes")
+
+def transform_decimal_into_min(pred):
+    pred_min = int(pred)
+    pred_sec = round((pred - pred_min) * 60)
+    return pred_min, pred_sec
+
+def print_prediction(st, df, result_df):
+    pred1_min, pred1_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
+        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        "Average delay of late trains at departure", df, result_df))
+    pred2_min, pred2_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
+        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        "Average delay of all trains at departure", df, result_df))
+    pred3_min, pred3_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
+        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        "Average delay of late trains at arrival", df, result_df))
+    pred4_min, pred4_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
+        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        "Average delay of all trains at arrival", df, result_df))
+
+
+    html_code = f"""
+    <div style='font-size:24px; font-weight:bold; padding: 10px; margin-bottom: 10px;'>
+        <div style='display: flex; justify-content: space-between; margin-bottom: 10px; gap: 20px;'>
+            <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; width: 48%; text-align: center;'>
+                <strong>Retard des trains en retard au départ:</strong><br>{pred1_min}min {pred1_sec}s
+            </div>
+            <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; width: 48%; text-align: center;'>
+                <strong>Retard des train au départ :</strong><br>{pred2_min}min {pred2_sec}s
+            </div>
         </div>
-        """
-        components.html(html_date, height=70)
-
-def precise_pred():
-    precise_pred_sidebar()
-
-    with st.container():
-        st.header("Stats !")
-        with st.expander("Voir plus d'infos"):
-            st.write("Info de Stats")
-            st.write("Voici quelques informations supplémentaires !")
-            st.write("Ce contenu est  jusqu'à ce que l'utilisateur clique pour l'afficher.")
-    with st.container():
-        st.header("Stats !")
-        with st.expander("Voir plus d'infos"):
-            st.write("Info de Stats")
-            st.write("Voici quelques informations supplémentaires !")
-            st.write("Ce contenu est  jusqu'à ce que l'utilisateur clique pour l'afficher.")
-    with st.container():
-        st.header("Stats !")
-        with st.expander("Voir plus d'infos"):
-            st.write("Info de Stats")
-            st.write("Voici quelques informations supplémentaires !")
-            st.write("Ce contenu est  jusqu'à ce que l'utilisateur clique pour l'afficher.")
-
+        <div style='display: flex; justify-content: space-between; margin-bottom: 10px; gap: 20px;'>
+            <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; width: 48%; text-align: center;'>
+                <strong>Retard des trains en retard a l'arrivé :</strong><br>{pred3_min}min {pred3_sec}s
+            </div>
+            <div style='background-color: #f2f2f2; padding: 20px; border-radius: 8px; width: 48%; text-align: center;'>
+                <strong>Retard des trains a l'arrivé :</strong><br>{pred4_min}min {pred4_sec}s
+            </div>
+        </div>
+    </div>
+    """
+    components.html(html_code, height=400)
     return
 
+
+def precise_pred():
+    df = pd.read_csv('cleaned_dataset.csv')
+    result_df = pd.read_csv('model_results.csv')
+    session = precise_pred_sidebar()
+
+    #si le trajet est bon on aff
+    if st.session_state.valid_journey:
+        line_df = df[(df['Departure station'] == st.session_state.gare_depart) &
+                 (df['Arrival station'] == st.session_state.gare_arrivee)]
+        if line_df.empty:
+            st.error("Nous n'avons pas asez d'information sur ce trajet ou n'existe pas")
+            return
+        print_prediction(st, df, result_df)
+    return
 
 def prediction():
     page = st.sidebar.selectbox(
         'Quelle type de prediction voulez vous ?',
-        ('Prediction global', 'Prédiction précise')
+        ('Notre model de prédiction', 'Prédiction précise')
     )
     if page == "Prédiction précise":
         precise_pred()
-    elif page == "Prediction global":
+    elif page == "Notre model de prédiction":
         global_pred()
     return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -187,7 +368,7 @@ def graph_trains_delay_by_category(df):
     
     # convert all this data to display a boxplot
     plt.figure(figsize=(8, 5))
-    plt.boxplot(data_to_plot, labels=['>15min', '>30min', '>60min'])
+    plt.boxplot(data_to_plot, tick_labels=['>15min', '>30min', '>60min'])
     plt.title("Distribution of Train Delays by Category")
     plt.ylabel("Number of Trains")
     plt.grid(True)
@@ -446,8 +627,11 @@ def precise_graph_average_journey_time(monthly_journey_time):
 
 def plot_line_dashboard(departure_station, arrival_station):
     df = pd.read_csv('cleaned_dataset.csv')
+
     line_df = df[(df['Departure station'] == departure_station) &
                  (df['Arrival station'] == arrival_station)]
+    if line_df.empty:
+        return 84
 
     # reorder the month so its not in alphabetical order anymore
     month_order = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -491,18 +675,7 @@ def plot_line_dashboard(departure_station, arrival_station):
     with st.expander("Average Delay Causes Distribution"):
         # Graph °2: Number of long delays by  month
         precise_graph_nb_long_delay(monthly_delay_15, monthly_delay_30, monthly_delay_60)
-    return
-
-def get_coordinates(nom_gare):
-    GEOAPIFY_API_KEY = "224eacac2c7746d1a06ef91cc64ec5f4"
-    url = f"https://api.geoapify.com/v1/geocode/search?text=Gare {nom_gare}, France&apiKey={GEOAPIFY_API_KEY}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if data["features"]:
-            coords = data["features"][0]["geometry"]["coordinates"]
-            return coords[1], coords[0]
-    return None
+    return 0
 
 def precise_info_sidebar():
     #bulle info
@@ -516,6 +689,7 @@ def precise_info_sidebar():
         "NIMES", "ITALIE", "RENNES", "BREST", "LA ROCHELLE VILLE", "LE MANS", "VANNES", "DUNKERQUE", "AVIGNON TGV", "BELLEGARDE (AIN)", "BESANCON FRANCHE COMTE TGV", "DIJON VILLE", "MONTPELLIER", "MADRID", "ARRAS", "AIX EN PROVENCE TGV",
         "ANNECY", "NICE VILLE", "SAINT ETIENNE CHATEAUCREUX", "TOULON", "GENEVE", "PERPIGNAN", "LAUSANNE", "TOULOUSE MATABIAU"
     ]
+    gares.sort()
     #choix des gares
     st.sidebar.markdown("### Où ?")
     gare_depart = st.sidebar.selectbox("Gare de départ", gares)
@@ -589,7 +763,10 @@ def precise_info():
     session = precise_info_sidebar()
     #si le trajet est bon on aff
     if st.session_state.valid_journey:
-        plot_line_dashboard(st.session_state.gare_depart, st.session_state.gare_arrivee)
+        error = plot_line_dashboard(st.session_state.gare_depart, st.session_state.gare_arrivee)
+        if error == 84:
+            st.error("Nous n'avons pas aasez d'information sur ce trajet")
+            
     return
 
 def information():
