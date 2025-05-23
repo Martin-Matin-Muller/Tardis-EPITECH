@@ -9,6 +9,7 @@ import folium
 from streamlit_folium import st_folium
 import requests
 from tardis_model import predict_delay
+from PIL import Image
 
 
 
@@ -37,9 +38,34 @@ def global_pred_sidebar():
     st.sidebar.markdown("##### On doit écrire des truc ici, mais je sais pas quoi, ducoup je met des truc aléatoire , martin a de petit pied")
     return
 
+def display_info_about_pred():
+    # img1 = Image.open("streamlit.png")
+    # img2 = Image.open("streamlit.png")
+    # img3 = Image.open("streamlit.png")
+
+    st.title("Comment fonctionne nos prédictions ?") 
+    st.subheader("-> Prendre la base de donnée et la nettoyer")
+    st.write("LLL LLL LLLLLLL LLLLL LLLL LLLL LLLLLLLL LLLLLLL LLLL LLL LLL LLLLLLL ")
+    # st.image(img1, width=200)
+    st.write("LLL LLL LLLLLLL LLLLL LLLL LLLL LLLLLLLL LLLLLLL LLLL LLL LLL LLLLLLL ")
+
+
+
+    st.subheader("-> Prendre la base de donnée et la nettoyer")
+    st.write("martin")
+    # st.image(img2, width=200)
+    st.write("martin")
+
+
+
+    st.subheader("-> Prendre la base de donnée et la nettoyer")
+    st.write("martin")
+    # st.image(img3, width=200)
+    return
+
 def global_pred():
     global_pred_sidebar()
-    st.write("martin")
+    display_info_about_pred()
     return
 
 def precise_pred_sidebar():
@@ -62,6 +88,9 @@ def precise_pred_sidebar():
     #choix de la date
     st.sidebar.markdown("### Quand ?")
     date_debut = st.sidebar.date_input("Date de début", min_value=datetime.today())
+    #choix du service
+    st.sidebar.markdown("### Service ?")
+    service = st.sidebar.selectbox("Service", ["National", "International"])
     #vérifie si ya valid_journey dans la sesion actuel
     if "valid_journey" not in st.session_state:
         st.session_state.valid_journey = False
@@ -78,6 +107,7 @@ def precise_pred_sidebar():
             st.session_state.gare_depart = gare_depart
             st.session_state.gare_arrivee = gare_arrivee
             st.session_state.date_debut = date_debut
+            st.session_state.service = service
     #si le trajet est bon
     if st.session_state.valid_journey:
         #aff titre
@@ -139,16 +169,16 @@ def transform_decimal_into_min(pred):
 
 def print_prediction(st, df, result_df):
     pred1_min, pred1_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
-        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        st.session_state.gare_depart, st.session_state.gare_arrivee, st.session_state.service,
         "Average delay of late trains at departure", df, result_df))
     pred2_min, pred2_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
-        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        st.session_state.gare_depart, st.session_state.gare_arrivee, st.session_state.service,
         "Average delay of all trains at departure", df, result_df))
     pred3_min, pred3_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
-        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        st.session_state.gare_depart, st.session_state.gare_arrivee, st.session_state.service,
         "Average delay of late trains at arrival", df, result_df))
     pred4_min, pred4_sec = transform_decimal_into_min(predict_delay(str(st.session_state.date_debut),
-        st.session_state.gare_depart, st.session_state.gare_arrivee,
+        st.session_state.gare_depart, st.session_state.gare_arrivee, st.session_state.service,
         "Average delay of all trains at arrival", df, result_df))
 
 
@@ -177,6 +207,7 @@ def print_prediction(st, df, result_df):
 
 
 def precise_pred():
+    precise_pred_sidebar()
     df = pd.read_csv('cleaned_dataset.csv')
     result_df = pd.read_csv('model_results.csv')
 
@@ -747,6 +778,7 @@ def precise_info_sidebar():
 
 
 def precise_info():
+    precise_info_sidebar()
     #si le trajet est bon on aff
     if st.session_state.valid_journey:
         error = plot_line_dashboard(st.session_state.gare_depart, st.session_state.gare_arrivee)
