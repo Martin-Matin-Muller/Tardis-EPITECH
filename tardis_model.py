@@ -67,7 +67,7 @@ def predict_delay(date_str, departure, destination, service, target, df, results
     else:
         month = datetime.strptime(date_str, "%Y-%m-%d").month
 
-    X = df[['Month', 'Departure station', 'Arrival station']]
+    X = df[['Month', 'Departure station', 'Arrival station', 'Service']]
     y = df[target]
 
     row = results_df[results_df['target'] == target].sort_values('rmse').iloc[0]
