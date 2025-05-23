@@ -2,16 +2,11 @@
 # coding: utf-8
 
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-#from sklearn.preprocessing import StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import make_scorer, mean_absolute_error, root_mean_squared_error
 from sklearn.dummy import DummyRegressor
 from datetime import datetime
 

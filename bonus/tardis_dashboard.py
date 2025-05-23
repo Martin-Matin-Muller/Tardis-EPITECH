@@ -2,24 +2,12 @@
 
 import streamlit as st
 import pandas as pd
-import numpy as np
-import streamlit as st
-import streamlit.components.v1 as components
 from datetime import datetime
 import matplotlib.pyplot as plt
 import streamlit.components.v1 as components
 import folium
 from streamlit_folium import st_folium
 import requests
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
-#from sklearn.preprocessing import StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import make_scorer, mean_absolute_error, root_mean_squared_error
-from sklearn.dummy import DummyRegressor
 from tardis_model import predict_delay
 
 
@@ -93,7 +81,7 @@ def precise_pred_sidebar():
     #si le trajet est bon
     if st.session_state.valid_journey:
         #aff titre
-        html_title = f"""
+        html_title = """
         <div style='font-size:40px; font-weight:bold; overflow: hidden; text-overflow: ellipsis;'>
             Information sur votre trajet :
         </div>
@@ -191,7 +179,6 @@ def print_prediction(st, df, result_df):
 def precise_pred():
     df = pd.read_csv('cleaned_dataset.csv')
     result_df = pd.read_csv('model_results.csv')
-    session = precise_pred_sidebar()
 
     #si le trajet est bon on aff
     if st.session_state.valid_journey:
@@ -716,7 +703,7 @@ def precise_info_sidebar():
     #si le trajet est bon
     if st.session_state.valid_journey:
         #aff titre
-        html_title = f"""
+        html_title = """
         <div style='font-size:40px; font-weight:bold; overflow: hidden; text-overflow: ellipsis;'>
             Information sur votre trajet :
         </div>
@@ -760,7 +747,6 @@ def precise_info_sidebar():
 
 
 def precise_info():
-    session = precise_info_sidebar()
     #si le trajet est bon on aff
     if st.session_state.valid_journey:
         error = plot_line_dashboard(st.session_state.gare_depart, st.session_state.gare_arrivee)
