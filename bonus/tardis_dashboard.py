@@ -85,7 +85,7 @@ def precise_pred_sidebar():
     st.sidebar.markdown("### Ce que vous retrouverez dans cette page :")
     st.sidebar.markdown(
         "##### l'outil de prédiction de retards sur un trajet en particulier."
-        "\n\nSélectionez deux gare, une date de départ et appuyer sur valider."
+        "\n\nSélectionnez deux gare, une date de départ et appuyez sur \"valider\"."
     )
     # init les gares
     gares = [
@@ -599,7 +599,7 @@ def display_global_info_graph():
 
 
 def global_info_sidebar():
-    st.sidebar.markdown("### ce que vous retrouverez dans cette page :")
+    st.sidebar.markdown("### Ce que vous retrouverez dans cette page :")
     st.sidebar.markdown(
         "##### Plusieurs graphiques sur des statisques concernant les retards des trains de la SNCF."
     )
@@ -801,7 +801,7 @@ def precise_info_sidebar():
     st.sidebar.markdown("### Ce que vous retrouverez dans cette page :")
     st.sidebar.markdown(
         "##### Des informations et des graphiques sur un trajet spécifique."
-        "\n\nSélectionez deux gare, une date de départ et appuyer sur valider."
+        "\n\nSélectionnez deux gare, une date de départ et appuyez sur valider."
     )
     # init les gares
     gares = [

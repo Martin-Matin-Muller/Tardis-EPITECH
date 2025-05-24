@@ -127,7 +127,7 @@ def predict_delay(date_str, departure, destination, service, target, df, results
     }
     model_cls = model_map[model_name]
 
-    pipe = build_pipeline(categorical_features)
+    pipe = build_pipeline(categorical_features, numeric_features)
     pipe.set_params(regressor=model_cls(**best_params))
     pipe.fit(X, y)
 
