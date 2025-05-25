@@ -38,14 +38,14 @@ def display_info_about_pred():
     img3 = Image.open("trend_cheese.png")
     img4 = Image.open("model.jpg")
 
-    st.title("Comment fonctionne notre model de prédictions ?")
+    st.title("Comment fonctionne notre modèle de prédictions ?")
     st.write(
         "Tout commence avec une gigantesque base de données de la SNCF\nIl contient plusieurs informations sur des trajets à certaines date comme les nombre de trains programmés, la durée moyenne des trajets et surtout les retards."
     )
     st.subheader("1 - Préparer la base de donnée")
     st.write(
-        "La première partie consiste à préparer la base de données.\n On entends principalement par là, la nettoyer. Car elle est rempli de fautes (nombre de trains à virgule, temps de trajets négatifs ou fautes d'orthographes).\n"
-        "Comme vous pouvez le voir dans l'extrait de la base données si dessous"
+        "La première partie consiste à préparer la base de données.\n On entends principalement par là, la nettoyer. Car elle est remplie de fautes (nombre de trains à virgule, temps de trajets négatifs ou fautes d'orthographes).\n"
+        "Comme vous pouvez le voir dans l'extrait de la base données ci-dessous"
     )
     st.image(img1, width=1000)
     st.write("Il faut donc choisir quelles informations/lines corriger ou supprimer.")
@@ -58,18 +58,18 @@ def display_info_about_pred():
     st.image(img2, width=1000)
     st.image(img3, width=1000)
     st.write(
-        "L'idée est qu'à la fin on se retrouve avec environ un milliers de graphiques afin de sélectionner les informations qui serviront de paramètres à notre modèle."
+        "L'idée est qu'à la fin on se retrouve avec environ un millier de graphiques afin de sélectionner les informations qui serviront de paramètres à notre modèle."
     )
 
     st.subheader("3 - Entraîner le modèle")
     st.write(
-        "Après avoir identifié quelles données serviront au modèle pour faire des prédictions, il faut entreîner ce modèle à prédire les retards.\nMais avant même de l'entraîner il faut choisir un modèle. En effet il en existe plusieurs. Certains sont meilleurs que d'autres pour prédire certaines choses."
+        "Après avoir identifié quelles données serviront au modèle pour faire des prédictions, il faut entraîner ce modèle à prédire les retards.\nMais avant même de l'entraîner il faut choisir un modèle. En effet il en existe plusieurs. Certains sont meilleurs que d'autres pour prédire certaines choses."
         "\n\nDans cette dernière partie, nous allons créer un algorythme qui va automatiser le test de plusieurs modèles avec diférents paramètres."
     )
     st.image(img4, width=1000)
     st.write(
-        " L'algorythme va comparer les resultats grâce à des methodes mathématiques compliquées. L'algorythme renvoie donc le meilleur modèle avec les meilleurs paramètres. Ce modèle est directement utiliser comme fonction pour prédire des retards dans la dernière section de ce dashboard."
-        "\n\nNous avons donc à la fin un modèlme qui prédit un potentiel retards par rapport à un trajet et un dates."
+        " L'algorythme va comparer les résultats grâce à des methodes mathématiques compliquées. L'algorythme renvoie donc le meilleur modèle avec les meilleurs paramètres. Ce modèle est directement utiliser comme fonction pour prédire des retards dans la dernière section de ce dashboard."
+        "\n\nNous avons donc à la fin un modèle qui prédit un potentiel retards par rapport à un trajet et une date."
     )
     return
 
