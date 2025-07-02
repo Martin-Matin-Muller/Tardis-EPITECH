@@ -7,6 +7,6 @@
 .vscode/
 
 input.log
-
+/streamlit-env
 bonus/venv
 venv
